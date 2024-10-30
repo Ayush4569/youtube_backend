@@ -356,48 +356,65 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     );
 });
 
-const getWatchHistory = asyncHandler(async(req,res)=>{
- const user = await User.aggregate([
-  {
-    $match:{
-     _id:new mongoose.Types.ObjectId(req.user._id)
-    }
-  },
-  {
-    $lookup:{
-      from:"videos",
-      localField:"watchHistory",
-      foreignField:"_id",
-      as:"watchhistory",
-      pipeline:[
-        {
-          $lookup:{
-            from:"users",
-            localField:"owner",
-            foreignField:"_id",
-            as:"owner",
-            pipeline:[
-              {
-                $project:{
-                  username:1,
-                  fullName:1,
-                  avatar:1
-                }
-              }
-            ]
-          }
-        },
-        {
-          $addFields:{
-            $first:"$owner"
-          }
-        }
-      ]
-    }
-  }
- ])
- return res.status(200).json(new ApiResponse(200,user[0].watchHistory,"Watch History fetched successfully"))
-})
+const getWatchHistory = asyncHandler(async (req, res) => {
+  // Start aggregation on the User collection, finding the user by _id
+  const user = await User.aggregate([
+    {
+      // Match the document where _id matches the current user’s ID from the request
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      // Lookup to fetch videos from the 'videos' collection that match the user’s watchHistory array
+      $lookup: {
+        from: "videos",            // Collection to join (videos)
+        localField: "watchHistory", // Field in User (array of video _id's)
+        foreignField: "_id",        // Field in Video to match on
+        as: "watchHistory",         // Name for the new field with the joined data
+
+        // Pipeline for each video in watchHistory to further enhance with owner info
+        pipeline: [
+          {
+            // Nested lookup to get owner details for each video
+            $lookup: {
+              from: "users",         // Collection to join (users)
+              localField: "owner",   // Field in Video (owner's _id)
+              foreignField: "_id",   // Field in User to match on
+              as: "owner",           // Name for the field with the joined owner data
+              
+              // Pipeline to limit owner info
+              pipeline: [
+                {
+                  // Project to limit owner details to username, fullName, and avatar
+                  $project: {
+                    username: 1,
+                    fullName: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            // AddField to select the first owner result, assuming only one owner per video
+            $addFields: {
+              owner: {
+                $first: "$owner", // Convert 'owner' array to single object
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  // Send the final watch history array as JSON
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user[0].watchHistory, "Watch History fetched successfully"));
+});
+
 export {
   registerUser,
   loginUser,
