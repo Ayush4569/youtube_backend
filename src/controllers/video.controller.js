@@ -52,6 +52,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
+  console.log("Req.file",req.file);
   const { videoId } = req.params;
   let updatedFields = {};
   //TODO: update video details like title, description, thumbnail
@@ -62,7 +63,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   if (newTitle) updatedFields.title = newTitle;
   if (newDescription) updatedFields.description = newDescription;
 
-  const newThumbnailLocalPath = req.files?.thumbnail[0].path;
+  const newThumbnailLocalPath = req.file?.path;
   if (newThumbnailLocalPath) {
     const thumbnail = await uploadOnCloudinary(newThumbnailLocalPath);
     updatedFields.thumbnail = thumbnail.url;
