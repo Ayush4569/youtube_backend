@@ -2,7 +2,7 @@ import { Schema, model } from "mongoose";
 
 const subscriptionSchema = new Schema(
   {
-    // subscriber is basically a user who subscribes to a channle
+    // subscriber is basically a user who subscribes to a channel
     subscriber: {
       type: Schema.Types.ObjectId,
       ref: "User",
